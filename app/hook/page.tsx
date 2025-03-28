@@ -7,6 +7,7 @@ import { Spinner } from '@/components/spinner';
 import { sepolia } from '@/config/network';
 import { useCurrentChainId } from '@/hooks/useCurrentChainId';
 import { getBigint, handleError, parseEthers } from '@/lib/utils';
+import { getPC } from '@/providers/publicClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useState } from 'react';
@@ -72,27 +73,24 @@ function WrapHook({ config }: { config: SwapConfig }) {
     const inputAmountBn = parseEthers(inputStr)
     // const ptOut = 0n
     // const provider = useEthersProvider()
-    const chainId = useCurrentChainId()
     const { data: wc } = useWalletClient()
-    const pc = usePublicClient({ chainId })
     const is0To1 = config.token0 === tokenA
     const { data: swapOut, isFetching } = useQuery({
         initialData: 0n,
-        queryKey: ['outAmount', chainId, inputAmountBn, is0To1],
-        enabled: Boolean(pc),
+        queryKey: ['outAmount', inputAmountBn, is0To1, config],
         queryFn: () => {
-            if (!pc) return 0n;
             if (inputAmountBn == 0n) return 0n
             const abi = parseAbi(['function getSYtoPTAmountOut(uint256 sYAmount) external view returns (uint256 ptAmount)', 'function getPTtoSYAmountOut(uint256 ptAmount) external view returns (uint256 syAmount)'])
-            return pc.readContract({ abi, functionName: is0To1 ? 'getSYtoPTAmountOut' : 'getPTtoSYAmountOut', address: PoolKey.hooks, args: [inputAmountBn] })
+            return getPC().readContract({ abi, functionName: is0To1 ? 'getSYtoPTAmountOut' : 'getPTtoSYAmountOut', address: config.hook, args: [inputAmountBn] })
         }
     })
     const { data: balances, refetch: refetchBalance } = useQuery({
         initialData: {},
-        queryKey: ['getDatas', config],
-        enabled: Boolean(pc) && Boolean(wc),
+        queryKey: ['getDatas', config, wc?.account.address],
+        enabled: Boolean(wc),
         queryFn: async () => {
-            if (!pc || !wc) return {}
+            if (!wc) return {}
+            const pc = getPC()
             const [token0B, token1B] = await Promise.all([
                 pc.readContract({ abi: erc20Abi, functionName: 'balanceOf', address: config.token0.address, args: [wc.account.address] }),
                 pc.readContract({ abi: erc20Abi, functionName: 'balanceOf', address: config.token1.address, args: [wc.account.address] })
@@ -105,7 +103,8 @@ function WrapHook({ config }: { config: SwapConfig }) {
     const { mutate, isPending } = useMutation({
         onError: handleError,
         mutationFn: async () => {
-            if (isPending || !wc || !pc || swapOut == 0n) return
+            if (isPending || !wc || swapOut == 0n) return
+            const pc = getPC()
             const minOut = swapOut * 99n / 100n;
             const confirmations = 3;
             // approve
@@ -154,7 +153,6 @@ function WrapHook({ config }: { config: SwapConfig }) {
             refetchBalance()
         }
     })
-    if (!SupportNetWork.find(n => n.id == chainId)) return null
     return <div className="mx-auto w-full max-w-xl flex justify-center items-center pt-40 px-5">
         <div className='flex flex-col items-center gap-2 w-full mx-auto'>
             <AssetInput

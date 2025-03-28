@@ -191,7 +191,7 @@ export function Header() {
               )
             })}
           </div>
-          {showDefNet && pathname !== '/' && (
+          {showDefNet && (
             <div
               className='flex items-center gap-2 text-sm text-slate-500 dark:text-slate-50 font-medium rounded-full cursor-pointer'
               onClick={() => openChainModal && openChainModal()}
@@ -200,7 +200,7 @@ export function Header() {
               <div className='hidden sm:block'>{NetName[chainId]}</div>
             </div>
           )}
-          {pathname !== '/' && <ConnectBtn />}
+          {<ConnectBtn />}
         </div>
       </header>
     </div>

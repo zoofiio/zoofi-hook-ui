@@ -13,7 +13,7 @@ import _ from 'lodash'
 import { useState } from 'react'
 import { LuChevronDown } from 'react-icons/lu'
 import { toast } from 'sonner';
-import { Address, Hex, encodeAbiParameters, encodePacked, erc20Abi, parseAbi, parseAbiParameters } from 'viem'
+import { Address, Hex, encodeAbiParameters, encodePacked, erc20Abi, formatEther, parseAbi, parseAbiParameters } from 'viem'
 import { arbitrum } from 'viem/chains';
 
 import { usePublicClient, useWalletClient } from 'wagmi'
@@ -72,7 +72,7 @@ export default function Page() {
     const { data: wc } = useWalletClient()
     const pc = usePublicClient()
     const is0To1 = config.token0 === tokenA
-    const { data: swapOut } = useQuery({
+    const { data: swapOut, isFetching } = useQuery({
         initialData: 0n,
         queryKey: ['outAmount', inputAmountBn, is0To1],
         enabled: Boolean(pc),
@@ -151,7 +151,7 @@ export default function Page() {
         }
     })
     if (!SupportNetWork.find(n => n.id == chainId)) return null
-    return <div className="mx-auto w-full max-w-xl flex justify-center items-center pt-10 px-5">
+    return <div className="mx-auto w-full max-w-xl flex justify-center items-center pt-40 px-5">
         <div className='flex flex-col items-center gap-2 w-full mx-auto'>
             <AssetInput
                 asset={tokenA.symbol}
@@ -168,8 +168,9 @@ export default function Page() {
             </div>
             <AssetInput
                 asset={tokenB.symbol}
-                amount={displayBalance(swapOut)}
+                amount={formatEther(swapOut)}
                 balance={getBigint(balances, tokenB.address)}
+                loading={isFetching}
                 checkBalance={false}
                 readonly
             />

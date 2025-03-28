@@ -2,21 +2,20 @@
     ; (BigInt.prototype as any).toJSON = function () {
         return this.toString()
     }
-import { AssetInput } from '@/components/asset-input'
-import { Spinner } from '@/components/spinner'
+import { AssetInput } from '@/components/asset-input';
+import { Spinner } from '@/components/spinner';
 import { sepolia } from '@/config/network';
 import { useCurrentChainId } from '@/hooks/useCurrentChainId';
-import { getBigint, handleError, parseEthers } from '@/lib/utils'
-import { displayBalance } from '@/utils/display'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import _ from 'lodash'
-import { useState } from 'react'
-import { LuChevronDown } from 'react-icons/lu'
+import { getBigint, handleError, parseEthers } from '@/lib/utils';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import _ from 'lodash';
+import { useState } from 'react';
+import { LuChevronDown } from 'react-icons/lu';
 import { toast } from 'sonner';
-import { Address, Hex, encodeAbiParameters, encodePacked, erc20Abi, formatEther, parseAbi, parseAbiParameters } from 'viem'
+import { Address, Hex, encodeAbiParameters, encodePacked, erc20Abi, formatEther, parseAbi, parseAbiParameters } from 'viem';
 import { arbitrum } from 'viem/chains';
 
-import { usePublicClient, useWalletClient } from 'wagmi'
+import { usePublicClient, useWalletClient } from 'wagmi';
 
 type Token = {
     address: Address,
@@ -39,6 +38,13 @@ const ConfigMap: { [k: number]: SwapConfig } = {
         UniRouter: '0x3a9d48ab9751398bbfa63ad67599bb04e4bdf98b',
         Permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3'
     },
+    [arbitrum.id]: {
+        token0: { symbol: 'SY', address: '0xB29F73f157b375146ed4a81d390642CD78f31260', decimal: 18 },
+        token1: { symbol: 'PT', address: '0xf12Ce74489a4AE2a801D1f03eB130948fE0A33a0', decimal: 18 },
+        hook: '0x2B2E2102595dD5390a7AC8157552FE97EfCb6a88',
+        UniRouter: '0xa51afafe0263b40edaef0df8781ea9aa03e381a3',
+        Permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3'
+    },
 
 }
 
@@ -50,11 +56,8 @@ const abiPermit2 = parseAbi([
 ])
 
 
-export default function Page() {
+function WrapHook({ config }: { config: SwapConfig }) {
     const [inputStr, setInputStr] = useState('')
-    const chainId = useCurrentChainId()
-    const config = ConfigMap[chainId]
-    const hasConfig = Boolean(config)
     const [[tokenA, tokenB], setTokens] = useState([config.token0, config.token1])
     const switchToken = () => {
         setTokens([tokenB, tokenA])
@@ -69,12 +72,13 @@ export default function Page() {
     const inputAmountBn = parseEthers(inputStr)
     // const ptOut = 0n
     // const provider = useEthersProvider()
+    const chainId = useCurrentChainId()
     const { data: wc } = useWalletClient()
-    const pc = usePublicClient()
+    const pc = usePublicClient({ chainId })
     const is0To1 = config.token0 === tokenA
     const { data: swapOut, isFetching } = useQuery({
         initialData: 0n,
-        queryKey: ['outAmount', inputAmountBn, is0To1],
+        queryKey: ['outAmount', chainId, inputAmountBn, is0To1],
         enabled: Boolean(pc),
         queryFn: () => {
             if (!pc) return 0n;
@@ -85,8 +89,8 @@ export default function Page() {
     })
     const { data: balances, refetch: refetchBalance } = useQuery({
         initialData: {},
-        queryKey: ['getDatas'],
-        enabled: Boolean(pc) && Boolean(wc) && hasConfig,
+        queryKey: ['getDatas', config],
+        enabled: Boolean(pc) && Boolean(wc),
         queryFn: async () => {
             if (!pc || !wc) return {}
             const [token0B, token1B] = await Promise.all([
@@ -178,4 +182,10 @@ export default function Page() {
             <button className='btn-primary flex items-center justify-center gap-4' onClick={() => !isPending && mutate()}>{isPending && <Spinner />}Swap</button>
         </div>
     </div>
+}
+export default function Page() {
+    const chainId = useCurrentChainId()
+    const config = ConfigMap[chainId]
+    if (!config) return null
+    return <WrapHook config={config} />
 }

@@ -10,13 +10,13 @@ import { getBigint, handleError, parseEthers } from '@/lib/utils';
 import { getPC } from '@/providers/publicClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 import { toast } from 'sonner';
 import { Address, Hex, encodeAbiParameters, encodePacked, erc20Abi, formatEther, parseAbi, parseAbiParameters } from 'viem';
 import { arbitrum } from 'viem/chains';
 
-import { usePublicClient, useWalletClient } from 'wagmi';
+import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 
 type Token = {
     address: Address,
@@ -60,6 +60,7 @@ const abiPermit2 = parseAbi([
 function WrapHook({ config }: { config: SwapConfig }) {
     const [inputStr, setInputStr] = useState('')
     const [[tokenA, tokenB], setTokens] = useState([config.token0, config.token1])
+    useEffect(() => { setTokens([config.token0, config.token1]) }, [config])
     const switchToken = () => {
         setTokens([tokenB, tokenA])
     }
@@ -84,19 +85,21 @@ function WrapHook({ config }: { config: SwapConfig }) {
             return getPC().readContract({ abi, functionName: is0To1 ? 'getSYtoPTAmountOut' : 'getPTtoSYAmountOut', address: config.hook, args: [inputAmountBn] })
         }
     })
+    const { address: account } = useAccount()
     const { data: balances, refetch: refetchBalance } = useQuery({
         initialData: {},
-        queryKey: ['getDatas', config, wc?.account.address],
-        enabled: Boolean(wc),
+        queryKey: ['getDatas', config, account],
+        enabled: Boolean(account),
         queryFn: async () => {
-            if (!wc) return {}
+            if (!account) return {}
             const pc = getPC()
             const [token0B, token1B] = await Promise.all([
-                pc.readContract({ abi: erc20Abi, functionName: 'balanceOf', address: config.token0.address, args: [wc.account.address] }),
-                pc.readContract({ abi: erc20Abi, functionName: 'balanceOf', address: config.token1.address, args: [wc.account.address] })
+                pc.readContract({ abi: erc20Abi, functionName: 'balanceOf', address: config.token0.address, args: [account] }),
+                pc.readContract({ abi: erc20Abi, functionName: 'balanceOf', address: config.token1.address, args: [account] })
             ])
-
-            return { [config.token0.address]: token0B, [config.token1.address]: token1B }
+            const data = { [config.token0.address]: token0B, [config.token1.address]: token1B }
+            console.info('balances:', data)
+            return data
         }
     })
 
@@ -153,13 +156,15 @@ function WrapHook({ config }: { config: SwapConfig }) {
             refetchBalance()
         }
     })
+    const tokenABalance = getBigint(balances, tokenA.address)
+    const tokenBBalance = getBigint(balances, tokenB.address)
     return <div className="mx-auto w-full max-w-xl flex justify-center items-center pt-40 px-5">
         <div className='flex flex-col items-center gap-2 w-full mx-auto'>
             <AssetInput
                 asset={tokenA.symbol}
                 amount={inputStr}
                 setAmount={setInputStr}
-                balance={getBigint(balances, tokenA.address)}
+                balance={tokenABalance}
 
             />
 
@@ -171,7 +176,7 @@ function WrapHook({ config }: { config: SwapConfig }) {
             <AssetInput
                 asset={tokenB.symbol}
                 amount={formatEther(swapOut)}
-                balance={getBigint(balances, tokenB.address)}
+                balance={tokenBBalance}
                 loading={isFetching}
                 checkBalance={false}
                 readonly

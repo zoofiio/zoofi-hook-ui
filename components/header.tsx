@@ -24,19 +24,22 @@ import { useAccount } from 'wagmi'
 import ConnectBtn from './connet-btn'
 import { CoinIcon } from './icons/coinicon'
 import { ThemeMode } from './theme-mode'
-import { sepolia } from 'viem/chains'
+import { arbitrum, sepolia } from 'viem/chains'
 import { Tip } from './ui/tip'
 import { BVAULTS_CONFIG } from '@/config/bvaults'
 
 const NetName: { [k: number]: string } = {
   [berachainTestnet.id]: 'Berachain Bartio',
   [berachain.id]: 'Berachain',
+  [sepolia.id]: 'Sepolia',
+  [arbitrum.id]: 'Arbitrum'
 }
 
 const NetIcon: { [k: number]: string } = {
   [berachainTestnet.id]: `${BASE_PATH}/berachain.svg`,
   [berachain.id]: `${BASE_PATH}/berachain.svg`,
   [sepolia.id]: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgZmlsbD0ibm9uZSI+PHBhdGggZmlsbD0iIzI1MjkyRSIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTQgMjhhMTQgMTQgMCAxIDAgMC0yOCAxNCAxNCAwIDAgMCAwIDI4WiIgY2xpcC1ydWxlPSJldmVub2RkIi8+PHBhdGggZmlsbD0idXJsKCNhKSIgZmlsbC1vcGFjaXR5PSIuMyIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTQgMjhhMTQgMTQgMCAxIDAgMC0yOCAxNCAxNCAwIDAgMCAwIDI4WiIgY2xpcC1ydWxlPSJldmVub2RkIi8+PHBhdGggZmlsbD0idXJsKCNiKSIgZD0iTTguMTkgMTQuNzcgMTQgMTguMjFsNS44LTMuNDQtNS44IDguMTktNS44MS04LjE5WiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Im0xNCAxNi45My01LjgxLTMuNDRMMTQgNC4zNGw1LjgxIDkuMTVMMTQgMTYuOTNaIi8+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJhIiB4MT0iMCIgeDI9IjE0IiB5MT0iMCIgeTI9IjI4IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHN0b3Agc3RvcC1jb2xvcj0iI2ZmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9ImIiIHgxPSIxNCIgeDI9IjE0IiB5MT0iMTQuNzciIHkyPSIyMi45NiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIHN0b3AtY29sb3I9IiNmZmYiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmYiIHN0b3Atb3BhY2l0eT0iLjkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48L3N2Zz4K',
+  [arbitrum.id]: 'https://arbitrum.io/logo_monochrome.svg'
 }
 
 export function useShowAdmin() {
@@ -73,17 +76,9 @@ export function Header() {
   const { openChainModal } = useChainModal()
   const showAdmin = useShowAdmin()
   const showTester = useShowTester()
-  const links = useMemo(() => {
+  const links: any[] = useMemo(() => {
     const links = [
-      ...(ENV.includes("lnt") ? [
-        { href: '/lnt-vaults', label: 'LNT-Vaults', icon: LuBox },
-        { href: '/lnts', label: 'LNTS', icon: LuBox },
-      ] : [
-        { href: '/b-vaults', label: 'B-Vaults', icon: LuBox },
-        { href: '/l-vaults', label: 'L-Vaults', icon: LuBox, disable: true },
-        { href: '/portfolio', label: 'Portfolio', icon: LuUserCircle },
-        { href: '/dashboard', label: 'Dashboard', icon: LuLineChart },
-      ]),
+
     ]
     showAdmin && links.push({ href: '/admin', label: 'Admin', icon: LuSettings })
       ; (showTester || showAdmin) && links.push({ href: '/tester', label: 'Tester', icon: LuSettings2 })

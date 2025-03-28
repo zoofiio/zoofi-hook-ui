@@ -6,6 +6,7 @@ import { CoinIcon } from "./icons/coinicon"
 import { cn } from "@/lib/utils"
 import { FiChevronUp } from "react-icons/fi"
 import { useToggle } from "react-use"
+import { useRouter } from "next/navigation"
 
 function BtnB(p: HTMLAttributes<HTMLButtonElement>) {
     const { children, ...props } = p;
@@ -17,6 +18,7 @@ function Section1() {
     const lightText = (txt: string) => {
         return <span className="text-primary">{txt}</span>
     }
+    const r = useRouter()
     return <section style={{ background: `url('/bg_section.svg')` }} className="w-full h-screen max-h-[100vw] py-[5.625em] px-[5.25em] flex items-center justify-center gap-[-2rem] z-10">
         <div className="flex flex-col gap-8">
             <div className="text-[4em] font-bold whitespace-nowrap">{lightText('L')}iquid {lightText('N')}ode {lightText('T')}oken</div>
@@ -25,7 +27,7 @@ function Section1() {
                 Initial Node Offering
             </div>
             <div>
-                <BtnB>Start</BtnB>
+                <BtnB onClick={() => r.push('/lnt-vaults')}>Start</BtnB>
             </div>
         </div>
         <AnimSvg />
